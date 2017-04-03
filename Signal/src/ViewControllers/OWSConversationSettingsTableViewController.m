@@ -8,10 +8,10 @@
 #import "FingerprintViewController.h"
 #import "NewGroupViewController.h"
 #import "OWSAvatarBuilder.h"
+#import "OWSBlockingManager.h"
 #import "OWSContactsManager.h"
 #import "PhoneNumber.h"
 #import "ShowGroupMembersViewController.h"
-#import "TSBlockingManager.h"
 #import "UIFont+OWS.h"
 #import "UIUtil.h"
 #import <25519/Curve25519.h>
@@ -63,7 +63,7 @@ static NSString *const OWSConversationSettingsTableViewControllerSegueShowGroupM
 @property (nonatomic, readonly) TSStorageManager *storageManager;
 @property (nonatomic, readonly) OWSContactsManager *contactsManager;
 @property (nonatomic, readonly) OWSMessageSender *messageSender;
-@property (nonatomic, readonly) TSBlockingManager *blockingManager;
+@property (nonatomic, readonly) OWSBlockingManager *blockingManager;
 
 @end
 
@@ -109,7 +109,7 @@ static NSString *const OWSConversationSettingsTableViewControllerSegueShowGroupM
     _storageManager = [TSStorageManager sharedManager];
     _contactsManager = [Environment getCurrent].contactsManager;
     _messageSender = [Environment getCurrent].messageSender;
-    _blockingManager = [TSBlockingManager sharedManager];
+    _blockingManager = [OWSBlockingManager sharedManager];
 }
 
 - (void)configureWithThread:(TSThread *)thread

@@ -9,7 +9,7 @@
 #import "OWSContactsManager.h"
 #import "PhoneNumber.h"
 #import "UIFont+OWS.h"
-#import <SignalServiceKit/TSBlockingManager.h>
+#import <SignalServiceKit/OWSBlockingManager.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -17,7 +17,7 @@ NSString * const kBlockListViewControllerCellIdentifier = @"kBlockListViewContro
 
 @interface BlockListViewController ()
 
-@property (nonatomic, readonly) TSBlockingManager *blockingManager;
+@property (nonatomic, readonly) OWSBlockingManager *blockingManager;
 @property (nonatomic, readonly) NSArray<NSString *> *blockedPhoneNumbers;
 
 @property (nonatomic, readonly) OWSContactsManager *contactsManager;
@@ -44,8 +44,8 @@ typedef NS_ENUM(NSInteger, BlockListViewControllerSection) {
 - (void)loadView
 {
     [super loadView];
-    
-    _blockingManager = [TSBlockingManager sharedManager];
+
+    _blockingManager = [OWSBlockingManager sharedManager];
     _blockedPhoneNumbers = [_blockingManager blockedPhoneNumbers];
     _contactsManager = [Environment getCurrent].contactsManager;
     self.contacts = self.contactsManager.signalContacts;

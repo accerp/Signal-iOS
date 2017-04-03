@@ -5,7 +5,7 @@
 #import "BlockListUIUtils.h"
 #import "PhoneNumber.h"
 #import <SignalServiceKit/Contact.h>
-#import <SignalServiceKit/TSBlockingManager.h>
+#import <SignalServiceKit/OWSBlockingManager.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (void)showBlockContactActionSheet:(Contact *)contact
                  fromViewController:(UIViewController *)fromViewController
-                    blockingManager:(TSBlockingManager *)blockingManager
+                    blockingManager:(OWSBlockingManager *)blockingManager
                     completionBlock:(BlockActionCompletionBlock)completionBlock
 {
     NSMutableArray<NSString *> *phoneNumbers = [NSMutableArray new];
@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)showBlockPhoneNumberActionSheet:(NSString *)phoneNumber
                             displayName:(NSString *)displayName
                      fromViewController:(UIViewController *)fromViewController
-                        blockingManager:(TSBlockingManager *)blockingManager
+                        blockingManager:(OWSBlockingManager *)blockingManager
                         completionBlock:(BlockActionCompletionBlock)completionBlock
 {
     [self showBlockPhoneNumbersActionSheet:@[ phoneNumber ]
@@ -52,7 +52,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)showBlockPhoneNumbersActionSheet:(NSArray<NSString *> *)phoneNumbers
                              displayName:(NSString *)displayName
                       fromViewController:(UIViewController *)fromViewController
-                         blockingManager:(TSBlockingManager *)blockingManager
+                         blockingManager:(OWSBlockingManager *)blockingManager
                          completionBlock:(BlockActionCompletionBlock)completionBlock
 {
     OWSAssert(phoneNumbers.count > 0);
@@ -96,7 +96,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)blockPhoneNumbers:(NSArray<NSString *> *)phoneNumbers
               displayName:(NSString *)displayName
        fromViewController:(UIViewController *)fromViewController
-          blockingManager:(TSBlockingManager *)blockingManager
+          blockingManager:(OWSBlockingManager *)blockingManager
 {
     OWSAssert(phoneNumbers.count > 0);
     OWSAssert(displayName.length > 0);
@@ -122,7 +122,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)showUnblockPhoneNumberActionSheet:(NSString *)phoneNumber
                               displayName:(NSString *)displayName
                        fromViewController:(UIViewController *)fromViewController
-                          blockingManager:(TSBlockingManager *)blockingManager
+                          blockingManager:(OWSBlockingManager *)blockingManager
                           completionBlock:(BlockActionCompletionBlock)completionBlock
 {
     OWSAssert(phoneNumber.length > 0);
@@ -166,7 +166,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)unblockPhoneNumber:(NSString *)phoneNumber
                displayName:(NSString *)displayName
         fromViewController:(UIViewController *)fromViewController
-           blockingManager:(TSBlockingManager *)blockingManager
+           blockingManager:(OWSBlockingManager *)blockingManager
 {
     OWSAssert(phoneNumber.length > 0);
     OWSAssert(displayName.length > 0);

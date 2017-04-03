@@ -13,7 +13,7 @@
 #import "Signal-Swift.h"
 #import "UIColor+OWS.h"
 #import "UIUtil.h"
-#import <SignalServiceKit/TSBlockingManager.h>
+#import <SignalServiceKit/OWSBlockingManager.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
                                                  UISearchResultsUpdating,
                                                  MFMessageComposeViewControllerDelegate>
 
-@property (nonatomic, readonly) TSBlockingManager *blockingManager;
+@property (nonatomic, readonly) OWSBlockingManager *blockingManager;
 @property (nonatomic, readonly) NSArray<NSString *> *blockedPhoneNumbers;
 
 @property (nonatomic) IBOutlet UITableViewCell *inviteCell;
@@ -80,7 +80,7 @@ NSString *const MessageComposeTableViewControllerCellContact = @"ContactTableVie
     _contactsManager = [Environment getCurrent].contactsManager;
     _phoneNumberAccountSet = [NSMutableSet set];
 
-    _blockingManager = [TSBlockingManager sharedManager];
+    _blockingManager = [OWSBlockingManager sharedManager];
     _blockedPhoneNumbers = [_blockingManager blockedPhoneNumbers];
 
     [self observeNotifications];

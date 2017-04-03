@@ -15,9 +15,9 @@
 #import <MobileCoreServices/UTCoreTypes.h>
 #import <SignalServiceKit/MimeTypeUtil.h>
 #import <SignalServiceKit/NSDate+millisecondTimeStamp.h>
+#import <SignalServiceKit/OWSBlockingManager.h>
 #import <SignalServiceKit/OWSMessageSender.h>
 #import <SignalServiceKit/TSAccountManager.h>
-#import <SignalServiceKit/TSBlockingManager.h>
 
 static NSString *const kUnwindToMessagesViewSegue = @"UnwindToMessagesViewSegue";
 
@@ -29,7 +29,7 @@ static NSString *const kUnwindToMessagesViewSegue = @"UnwindToMessagesViewSegue"
 @property (nonatomic, readonly, strong) OWSMessageSender *messageSender;
 @property (nonatomic, readonly, strong) OWSContactsManager *contactsManager;
 
-@property (nonatomic, readonly) TSBlockingManager *blockingManager;
+@property (nonatomic, readonly) OWSBlockingManager *blockingManager;
 @property (nonatomic, readonly) NSArray<NSString *> *blockedPhoneNumbers;
 
 
@@ -66,7 +66,7 @@ static NSString *const kUnwindToMessagesViewSegue = @"UnwindToMessagesViewSegue"
     _messageSender = [Environment getCurrent].messageSender;
     _contactsManager = [Environment getCurrent].contactsManager;
 
-    _blockingManager = [TSBlockingManager sharedManager];
+    _blockingManager = [OWSBlockingManager sharedManager];
     _blockedPhoneNumbers = [_blockingManager blockedPhoneNumbers];
 
     [self observeNotifications];

@@ -14,9 +14,9 @@
 #import "UIUtil.h"
 #import "UIView+OWS.h"
 #import "ViewControllerUtils.h"
+#import <SignalServiceKit/OWSBlockingManager.h>
 #import <SignalServiceKit/PhoneNumberUtil.h>
 #import <SignalServiceKit/TSAccountManager.h>
-#import <SignalServiceKit/TSBlockingManager.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -31,7 +31,7 @@ NSString *const kContactsTable_CellReuseIdentifier = @"kContactsTable_CellReuseI
     UITableViewDataSource,
     UITableViewDelegate>
 
-@property (nonatomic, readonly) TSBlockingManager *blockingManager;
+@property (nonatomic, readonly) OWSBlockingManager *blockingManager;
 @property (nonatomic, readonly) NSArray<NSString *> *blockedPhoneNumbers;
 
 @property (nonatomic) UIButton *countryNameButton;
@@ -59,8 +59,8 @@ NSString *const kContactsTable_CellReuseIdentifier = @"kContactsTable_CellReuseI
     [super loadView];
    
     self.view.backgroundColor = [UIColor whiteColor];
-    
-    _blockingManager = [TSBlockingManager sharedManager];
+
+    _blockingManager = [OWSBlockingManager sharedManager];
     _blockedPhoneNumbers = [_blockingManager blockedPhoneNumbers];
     _contactsManager = [Environment getCurrent].contactsManager;
     self.contacts = [self filteredContacts];

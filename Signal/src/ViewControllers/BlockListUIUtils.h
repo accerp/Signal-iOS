@@ -5,7 +5,7 @@
 #import <UIKit/UIKit.h>
 
 @class Contact;
-@class TSBlockingManager;
+@class OWSBlockingManager;
 
 typedef void (^BlockActionCompletionBlock)(BOOL isBlocked);
 
@@ -15,19 +15,19 @@ typedef void (^BlockActionCompletionBlock)(BOOL isBlocked);
 
 + (void)showBlockContactActionSheet:(Contact *)contact
                  fromViewController:(UIViewController *)fromViewController
-                    blockingManager:(TSBlockingManager *)blockingManager
+                    blockingManager:(OWSBlockingManager *)blockingManager
                     completionBlock:(BlockActionCompletionBlock)completionBlock;
 
 + (void)showBlockPhoneNumberActionSheet:(NSString *)phoneNumber
                             displayName:(NSString *)displayName
                      fromViewController:(UIViewController *)fromViewController
-                        blockingManager:(TSBlockingManager *)blockingManager
+                        blockingManager:(OWSBlockingManager *)blockingManager
                         completionBlock:(BlockActionCompletionBlock)completionBlock;
 
 + (void)showUnblockPhoneNumberActionSheet:(NSString *)phoneNumber
                               displayName:(NSString *)displayName
                        fromViewController:(UIViewController *)fromViewController
-                          blockingManager:(TSBlockingManager *)blockingManager
+                          blockingManager:(OWSBlockingManager *)blockingManager
                           completionBlock:(BlockActionCompletionBlock)completionBlock;
 
 @end
