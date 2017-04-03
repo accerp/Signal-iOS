@@ -13,12 +13,16 @@
 #import "Signal-Swift.h"
 #import "UIColor+OWS.h"
 #import "UIUtil.h"
+#import <SignalServiceKit/TSBlockingManager.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface MessageComposeTableViewController () <UISearchBarDelegate,
                                                  UISearchResultsUpdating,
                                                  MFMessageComposeViewControllerDelegate>
+
+@property (nonatomic, readonly) TSBlockingManager *blockingManager;
+@property (nonatomic, readonly) NSArray<NSString *> *blockedPhoneNumbers;
 
 @property (nonatomic) IBOutlet UITableViewCell *inviteCell;
 @property (nonatomic) IBOutlet OWSNoSignalContactsView *noSignalContactsView;
@@ -75,7 +79,10 @@ NSString *const MessageComposeTableViewControllerCellContact = @"ContactTableVie
 
     _contactsManager = [Environment getCurrent].contactsManager;
     _phoneNumberAccountSet = [NSMutableSet set];
-    
+
+    _blockingManager = [TSBlockingManager sharedManager];
+    _blockedPhoneNumbers = [_blockingManager blockedPhoneNumbers];
+
     [self observeNotifications];
 
     return self;
@@ -101,6 +108,10 @@ NSString *const MessageComposeTableViewControllerCellContact = @"ContactTableVie
                                              selector:@selector(signalRecipientsDidChange:)
                                                  name:OWSContactsManagerSignalRecipientsDidChangeNotification
                                                object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(blockedPhoneNumbersDidChange:)
+                                                 name:kNSNotificationName_BlockedPhoneNumbersDidChange
+                                               object:nil];
 }
 
 - (void)dealloc
@@ -109,6 +120,13 @@ NSString *const MessageComposeTableViewControllerCellContact = @"ContactTableVie
 }
 
 - (void)signalRecipientsDidChange:(NSNotification *)notification {
+    [self updateContacts];
+}
+
+- (void)blockedPhoneNumbersDidChange:(id)notification
+{
+    _blockedPhoneNumbers = [_blockingManager blockedPhoneNumbers];
+
     [self updateContacts];
 }
 
@@ -123,7 +141,7 @@ NSString *const MessageComposeTableViewControllerCellContact = @"ContactTableVie
     self.tableView.estimatedRowHeight = (CGFloat)60.0;
     self.tableView.rowHeight = UITableViewAutomaticDimension;
 
-    self.contacts = self.contactsManager.signalContacts;
+    self.contacts = [self unblockedContacts];
     self.searchResults = self.contacts;
     [self initializeSearch];
 
@@ -701,12 +719,38 @@ NSString *const MessageComposeTableViewControllerCellContact = @"ContactTableVie
 }
 
 - (void)updateContacts {
-    self.contacts = self.contactsManager.signalContacts;
+    self.contacts = [self unblockedContacts];
     dispatch_async(dispatch_get_main_queue(), ^{
         [self updateSearchResultsForSearchController:self.searchController];
         [self.tableView reloadData];
         [self updateAfterRefreshTry];
     });
+}
+
+- (BOOL)isContactBlocked:(Contact *)contact
+{
+    if (contact.parsedPhoneNumbers.count < 1) {
+        return YES;
+    }
+
+    for (PhoneNumber *phoneNumber in contact.parsedPhoneNumbers) {
+        if ([_blockedPhoneNumbers containsObject:phoneNumber.toE164]) {
+            return YES;
+        }
+    }
+
+    return NO;
+}
+
+- (NSArray<Contact *> *_Nonnull)unblockedContacts
+{
+    NSMutableArray<Contact *> *result = [NSMutableArray new];
+    for (Contact *contact in self.contactsManager.signalContacts) {
+        if (![self isContactBlocked:contact]) {
+            [result addObject:contact];
+        }
+    }
+    return result;
 }
 
 #pragma mark - Navigation
