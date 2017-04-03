@@ -120,14 +120,18 @@ NSString *const MessageComposeTableViewControllerCellContact = @"ContactTableVie
 }
 
 - (void)signalRecipientsDidChange:(NSNotification *)notification {
-    [self updateContacts];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self updateContacts];
+    });
 }
 
 - (void)blockedPhoneNumbersDidChange:(id)notification
 {
-    _blockedPhoneNumbers = [_blockingManager blockedPhoneNumbers];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        _blockedPhoneNumbers = [_blockingManager blockedPhoneNumbers];
 
-    [self updateContacts];
+        [self updateContacts];
+    });
 }
 
 - (void)viewDidLoad {
@@ -141,7 +145,7 @@ NSString *const MessageComposeTableViewControllerCellContact = @"ContactTableVie
     self.tableView.estimatedRowHeight = (CGFloat)60.0;
     self.tableView.rowHeight = UITableViewAutomaticDimension;
 
-    self.contacts = [self unblockedContacts];
+    self.contacts = [self filteredContacts];
     self.searchResults = self.contacts;
     [self initializeSearch];
 
@@ -259,10 +263,8 @@ NSString *const MessageComposeTableViewControllerCellContact = @"ContactTableVie
     if (show) {
         self.searchController.searchBar.hidden = YES;
         self.tableView.backgroundView          = _loadingBackgroundView;
-        self.refreshControl                    = nil;
         self.tableView.backgroundView.opaque   = YES;
     } else {
-        [self initializeRefreshControl];
         self.searchController.searchBar.hidden = NO;
         self.tableView.backgroundView          = nil;
     }
@@ -281,14 +283,11 @@ NSString *const MessageComposeTableViewControllerCellContact = @"ContactTableVie
     _isNoContactsViewVisible = isNoContactsViewVisible;
 
     if (isNoContactsViewVisible) {
-        self.refreshControl = nil;
         self.searchController.searchBar.hidden = YES;
         self.tableView.backgroundView = self.noSignalContactsView;
         self.tableView.backgroundView.opaque   = YES;
         self.navigationItem.rightBarButtonItem = nil;
     } else {
-        [self initializeRefreshControl];
-        self.refreshControl.enabled = YES;
         self.searchController.searchBar.hidden = NO;
         self.tableView.backgroundView          = nil;
         self.navigationItem.rightBarButtonItem = self.createGroupBarButtonItem;
@@ -319,15 +318,6 @@ NSString *const MessageComposeTableViewControllerCellContact = @"ContactTableVie
     self.searchController.searchBar.searchBarStyle = UISearchBarStyleMinimal;
     self.searchController.searchBar.delegate       = self;
     self.searchController.searchBar.placeholder    = NSLocalizedString(@"SEARCH_BYNAMEORNUMBER_PLACEHOLDER_TEXT", @"");
-
-    [self initializeRefreshControl];
-}
-
-- (void)initializeRefreshControl {
-    UIRefreshControl *refreshControl = [[UIRefreshControl alloc] init];
-    [refreshControl addTarget:self action:@selector(refreshContacts) forControlEvents:UIControlEventValueChanged];
-    self.refreshControl = refreshControl;
-    [self.tableView addSubview:self.refreshControl];
 }
 
 #pragma mark - UISearchResultsUpdating
@@ -685,46 +675,12 @@ NSString *const MessageComposeTableViewControllerCellContact = @"ContactTableVie
     return contact;
 }
 
-#pragma mark Refresh controls
-
-- (void)updateAfterRefreshTry {
-    [self.refreshControl endRefreshing];
-
-    [self showLoadingBackgroundView:NO];
-    
-    [self showEmptyBackgroundViewIfNecessary];
-}
-
-- (void)refreshContacts {
-    [[ContactsUpdater sharedUpdater] updateSignalContactIntersectionWithABContacts:self.contactsManager.allContacts
-                                                                           success:^{
-                                                                               [self updateContacts];
-                                                                           }
-                                                                           failure:^(NSError *error) {
-                                                                               dispatch_async(dispatch_get_main_queue(), ^{
-                                                                                   UIAlertView *alert =
-                                                                                   [[UIAlertView alloc] initWithTitle:NSLocalizedString(@"ERROR_WAS_DETECTED_TITLE", @"")
-                                                                                                              message:NSLocalizedString(@"TIMEOUT_CONTACTS_DETAIL", @"")
-                                                                                                             delegate:nil
-                                                                                                    cancelButtonTitle:NSLocalizedString(@"OK", @"")
-                                                                                                    otherButtonTitles:nil];
-                                                                                   [alert show];
-                                                                                   [self updateAfterRefreshTry];
-                                                                               });
-                                                                           }];
-    
-    if ([self.contacts count] == 0) {
-        [self showLoadingBackgroundView:YES];
-    }
-}
-
 - (void)updateContacts {
-    self.contacts = [self unblockedContacts];
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self updateSearchResultsForSearchController:self.searchController];
-        [self.tableView reloadData];
-        [self updateAfterRefreshTry];
-    });
+    OWSAssert([NSThread isMainThread]);
+
+    self.contacts = [self filteredContacts];
+    [self updateSearchResultsForSearchController:self.searchController];
+    [self.tableView reloadData];
 }
 
 - (BOOL)isContactBlocked:(Contact *)contact
@@ -742,11 +698,22 @@ NSString *const MessageComposeTableViewControllerCellContact = @"ContactTableVie
     return NO;
 }
 
-- (NSArray<Contact *> *_Nonnull)unblockedContacts
+- (BOOL)isCurrentUserContact:(Contact *)contact
+{
+    for (PhoneNumber *phoneNumber in contact.parsedPhoneNumbers) {
+        if ([[phoneNumber toE164] isEqualToString:[TSAccountManager localNumber]]) {
+            return YES;
+        }
+    }
+
+    return NO;
+}
+
+- (NSArray<Contact *> *_Nonnull)filteredContacts
 {
     NSMutableArray<Contact *> *result = [NSMutableArray new];
     for (Contact *contact in self.contactsManager.signalContacts) {
-        if (![self isContactBlocked:contact]) {
+        if (![self isContactBlocked:contact] && ![self isCurrentUserContact:contact]) {
             [result addObject:contact];
         }
     }
