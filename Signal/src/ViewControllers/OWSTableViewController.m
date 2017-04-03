@@ -3,8 +3,6 @@
 //
 
 #import "OWSTableViewController.h"
-//#import "Environment.h"
-//#import "Signal-Swift.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -80,14 +78,18 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) NSString *title;
 @property (nonatomic) OWSTableActionBlock actionBlock;
 
+@property (nonatomic) OWSTableCustomCellBlock customCellBlock;
+@property (nonatomic) UITableViewCell *customCell;
+@property (nonatomic) NSNumber *customRowHeight;
+
 @end
 
 #pragma mark -
 
 @implementation OWSTableItem
 
-+ (OWSTableItem *)actionWithTitle:(NSString *)title
-                      actionBlock:(OWSTableActionBlock)actionBlock {
++ (OWSTableItem *)itemWithTitle:(NSString *)title actionBlock:(OWSTableActionBlock)actionBlock
+{
     OWSAssert(title.length > 0);
     
     OWSTableItem *item = [OWSTableItem new];
@@ -95,6 +97,60 @@ NS_ASSUME_NONNULL_BEGIN
     item.actionBlock = actionBlock;
     item.title = title;
     return item;
+}
+
++ (OWSTableItem *)itemWithCustomCell:(UITableViewCell *)customCell
+                     customRowHeight:(CGFloat)customRowHeight
+                         actionBlock:(OWSTableActionBlock)actionBlock
+{
+    OWSAssert(customCell);
+    OWSAssert(customRowHeight > 0);
+
+    OWSTableItem *item = [OWSTableItem new];
+    item.itemType = (actionBlock != nil ? OWSTableItemTypeAction : OWSTableItemTypeDefault);
+    item.actionBlock = actionBlock;
+    item.customCell = customCell;
+    item.customRowHeight = @(customRowHeight);
+    return item;
+}
+
++ (OWSTableItem *)itemWithCustomCellBlock:(OWSTableCustomCellBlock)customCellBlock
+                          customRowHeight:(CGFloat)customRowHeight
+                              actionBlock:(OWSTableActionBlock)actionBlock
+{
+    OWSAssert(customCellBlock);
+    OWSAssert(customRowHeight > 0);
+
+    OWSTableItem *item = [OWSTableItem new];
+    item.itemType = (actionBlock != nil ? OWSTableItemTypeAction : OWSTableItemTypeDefault);
+    item.actionBlock = actionBlock;
+    item.customCellBlock = customCellBlock;
+    item.customRowHeight = @(customRowHeight);
+    return item;
+}
+
++ (OWSTableItem *)itemWithCustomCellBlock:(OWSTableCustomCellBlock)customCellBlock
+                              actionBlock:(OWSTableActionBlock)actionBlock
+{
+    OWSAssert(customCellBlock);
+
+    OWSTableItem *item = [OWSTableItem new];
+    item.itemType = (actionBlock != nil ? OWSTableItemTypeAction : OWSTableItemTypeDefault);
+    item.actionBlock = actionBlock;
+    item.customCellBlock = customCellBlock;
+    return item;
+}
+
+- (UITableViewCell *)customCell
+{
+    if (_customCell) {
+        return _customCell;
+    }
+    if (_customCellBlock) {
+        return _customCellBlock();
+    }
+    OWSAssert(0);
+    return nil;
 }
 
 @end
@@ -172,6 +228,12 @@ NSString * const kOWSTableCellIdentifier = @"kOWSTableCellIdentifier";
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     OWSTableItem *item = [self itemForIndexPath:indexPath];
+
+    UITableViewCell *customCell = [item customCell];
+    if (customCell) {
+        return customCell;
+    }
+
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:kOWSTableCellIdentifier];
     OWSAssert(cell);
     
@@ -180,12 +242,31 @@ NSString * const kOWSTableCellIdentifier = @"kOWSTableCellIdentifier";
     return cell;
 }
 
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    OWSTableItem *item = [self itemForIndexPath:indexPath];
+    if (item.customRowHeight) {
+        return [item.customRowHeight floatValue];
+    }
+    return [super tableView:tableView heightForRowAtIndexPath:indexPath];
+}
+
+// Called before the user changes the selection. Return a new indexPath, or nil, to change the proposed selection.
+- (nullable NSIndexPath *)tableView:(UITableView *)tableView willSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    OWSTableItem *item = [self itemForIndexPath:indexPath];
+    if (!item.actionBlock) {
+        return nil;
+    }
+
+    return indexPath;
+}
+
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
 
     OWSTableItem *item = [self itemForIndexPath:indexPath];
-    if (item.itemType == OWSTableItemTypeAction) {
-        OWSAssert(item.actionBlock);
+    if (item.actionBlock) {
         item.actionBlock();
     }
 }
